@@ -38,14 +38,14 @@ void* transacciones(){
 	cantidad1 = cuen[cuenta1].val_ini;
 	cantidad2 = cuen[cuenta2].val_ini;
 	
-	while(cuen[cuenta1].estado == 0 && cuen[cuenta2].estado == 0 ){ //Mientras no encuentre dos cuentas desocupada
+	while(cuen[cuenta1].estado == 0 && cuen[cuenta2].estado == 0 ){ //no haya dos cuentas desocupadas
 		cuenta1=aleatorio(num_cuent);
 		cuenta2=aleatorio(num_cuent);
 		if (cuenta1 != cuenta2)	
 			break;
 	}
 	
-	pthread_mutex_lock(&tran_mut[cuenta1]); //Entra en zona segura para leer el arr_cuentas_estado
+	pthread_mutex_lock(&tran_mut[cuenta1]); //Entra en zona segura puntero
 	pthread_mutex_lock(&tran_mut[cuenta2]);
 
 	cuen[cuenta1].estado = 1; //Se pone el estado de la cuenta como ocupado
@@ -75,8 +75,8 @@ void* transacciones(){
 	
 	//Entra en zona segura para leer el_estado
 	
-	cuen[cuenta1].estado = 0; //Se pone el estado de la cuenta como desocupado
-	cuen[cuenta2].estado = 0; //Se pone el estado de la cuenta como desocupado
+	cuen[cuenta1].estado = 0; //Se pone el estado desocupado
+	cuen[cuenta2].estado = 0; //Se pone el estado desocupado
 	//Sale de zona segura
 	pthread_mutex_unlock(&tran_mut[cuenta1]);
 	pthread_mutex_unlock(&tran_mut[cuenta2]);
