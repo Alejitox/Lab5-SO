@@ -10,7 +10,6 @@
 
 int aletorio(int);
 
-//Declaracion de variables globales
 int num_cuent, num_hil, sum;
 pthread_mutex_t *tran_mut;
 double valor_ini, tiempo;
@@ -45,17 +44,14 @@ void* transacciones(){
 			break;
 	}
 	
-	pthread_mutex_lock(&tran_mut[cuenta1]); //Entra en zona segura puntero
+	pthread_mutex_lock(&tran_mut[cuenta1]); //Entra en zona segura
 	pthread_mutex_lock(&tran_mut[cuenta2]);
 
 	cuen[cuenta1].estado = 1; //Se pone el estado de la cuenta como ocupado
 	cuen[cuenta2].estado = 1; //Se pone el estado de la cuenta como ocupado
 
 	for(;;){
-		/*struct cuenta valor[valor_ini];
-		//valor=cantidad;
-		cantidad-	
-		cuenta1*/
+	
 		monto = aleatorio(cantidad1); //Se consulta un numero aleatorio entre 0 y el valor de la cuenta1
 		//se retira de una cuenta y se consigna en la otra
 		if(cuen[cuenta1].val_ini>monto){
@@ -70,14 +66,11 @@ void* transacciones(){
 		}
 		break; 			
 	}
-	//Sale de zona segura	
 	
-	
-	//Entra en zona segura para leer el_estado
 	
 	cuen[cuenta1].estado = 0; //Se pone el estado desocupado
 	cuen[cuenta2].estado = 0; //Se pone el estado desocupado
-	//Sale de zona segura
+
 	pthread_mutex_unlock(&tran_mut[cuenta1]);
 	pthread_mutex_unlock(&tran_mut[cuenta2]);
 	
