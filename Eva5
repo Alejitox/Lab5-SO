@@ -1,0 +1,145 @@
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <wait.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/shm.h>
+
+int aletorio(int);
+
+//Declaracion de variables globales
+int num_cuent, num_hil, sum;
+pthread_mutex_t *tran_mut;
+double valor_ini, tiempo;
+struct cuenta *cuen;
+
+struct cuenta{
+	int estado;	
+	int id;
+	double val_ini;
+};
+
+int aleatorio(int n){
+	int result = rand() % n;
+	return result;
+}
+
+void* transacciones(){
+	int cantidad1, cantidad2;	
+	int cuenta1=aleatorio(num_cuent);
+	int cuenta2=aleatorio(num_cuent);
+	int monto=aleatorio(num_cuent);
+	
+//para las transferencias
+	
+	cantidad1 = cuen[cuenta1].val_ini;
+	cantidad2 = cuen[cuenta2].val_ini;
+	
+	while(cuen[cuenta1].estado == 0 && cuen[cuenta2].estado == 0 ){ //Mientras no encuentre dos cuentas desocupada
+		cuenta1=aleatorio(num_cuent);
+		cuenta2=aleatorio(num_cuent);
+		if (cuenta1 != cuenta2)	
+			break;
+	}
+	
+	pthread_mutex_lock(&tran_mut[cuenta1]); //Entra en zona segura para leer el arr_cuentas_estado
+	pthread_mutex_lock(&tran_mut[cuenta2]);
+
+	cuen[cuenta1].estado = 1; //Se pone el estado de la cuenta como ocupado
+	cuen[cuenta2].estado = 1; //Se pone el estado de la cuenta como ocupado
+
+	for(;;){
+		/*struct cuenta valor[valor_ini];
+		//valor=cantidad;
+		cantidad-	
+		cuenta1*/
+		monto = aleatorio(cantidad1); //Se consulta un numero aleatorio entre 0 y el valor de la cuenta1
+		//se retira de una cuenta y se consigna en la otra
+		if(cuen[cuenta1].val_ini>monto){
+			cuen[cuenta1].val_ini = cuen[cuenta1].val_ini - monto; 
+			cuen[cuenta2].val_ini = cuen[cuenta2].val_ini + monto;
+		}
+		monto = aleatorio(cantidad2); //Se consulta un numero aleatorio entre 0 y el valor de la cuenta2
+		//se retira y se consigna
+		if(cuen[cuenta2].val_ini>monto){	
+			cuen[cuenta2].val_ini = cuen[cuenta2].val_ini - monto; 
+			cuen[cuenta1].val_ini = cuen[cuenta1].val_ini + monto;
+		}
+		break; 			
+	}
+	//Sale de zona segura	
+	
+	
+	//Entra en zona segura para leer el_estado
+	
+	cuen[cuenta1].estado = 0; //Se pone el estado de la cuenta como desocupado
+	cuen[cuenta2].estado = 0; //Se pone el estado de la cuenta como desocupado
+	//Sale de zona segura
+	pthread_mutex_unlock(&tran_mut[cuenta1]);
+	pthread_mutex_unlock(&tran_mut[cuenta2]);
+	
+	return NULL;
+}
+
+int main (int argc, char *argv[]){
+	int i=0;
+	int k;
+	int j=0;
+
+	sum=0;
+	num_hil=atoi(argv[1]);
+	tiempo=atof(argv[2]);
+	num_cuent=atoi(argv[3]);
+	valor_ini =atof(argv[4]);
+	pthread_t hilos[num_hil];
+
+	srand(time(NULL)*getpid());
+
+	struct cuenta cuentas[num_cuent];
+	cuen=cuentas;
+
+	// arreglo de semaforos
+	pthread_mutex_t mux[num_cuent];
+	tran_mut = mux;
+	for(k=0; k<num_cuent; k++){	
+		pthread_mutex_init(&mux[k], NULL);
+	}
+
+	//Ciclo para inicializar la estructura
+	for(k=0; k<num_cuent; k++){	
+		struct cuenta p;
+		cuentas[k] = p;	
+		cuentas[k].estado = 0;
+		cuentas[k].id=k;	
+		cuentas[k].val_ini=valor_ini;
+	}
+	//Se crean los hilos
+	for(k=0; k<num_cuent; k++){	
+		pthread_create(&hilos[k], NULL, &transacciones, NULL);
+	}
+	//Se esperan los hilos
+	for(k=0; k<num_cuent; k++){	
+		pthread_join(hilos[k], NULL);
+	}
+
+	//se calcula la suma
+	for (i=0; i<num_cuent; i++){
+		sum = sum + cuen[i].val_ini;
+	}
+	
+	sleep(tiempo);
+	for (i=0; i<num_cuent; i++){
+		j++;		
+		printf("cuenta %d %f\n", j, cuen[i].val_ini);
+	}
+	printf("\nBalance: %d\n", sum);
+	
+	for(k=0; k<num_cuent; k++){	
+		pthread_mutex_destroy(&mux[k]);
+	}
+
+	return 0;
+}
